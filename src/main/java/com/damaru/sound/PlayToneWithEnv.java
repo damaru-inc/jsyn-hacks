@@ -2,19 +2,16 @@ package com.damaru.sound;
 
 import com.jsyn.JSyn;
 import com.jsyn.Synthesizer;
-import com.jsyn.ports.UnitGatePort;
 import com.jsyn.ports.UnitInputPort;
 import com.jsyn.ports.UnitVariablePort;
-import com.jsyn.unitgen.EnvelopeDAHDSR;
-import com.jsyn.unitgen.LineOut;
-import com.jsyn.unitgen.SineOscillator;
+import com.jsyn.unitgen.*;
 import com.jsyn.util.WaveRecorder;
 
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
 
-public class PlayTone {
+public class PlayToneWithEnv {
 
     private static final double DURATION = 4.0;
     private SineOscillator oscillator1 = new SineOscillator();
@@ -23,6 +20,8 @@ public class PlayTone {
 
     LineOut lineOut;
     private WaveRecorder recorder;
+    private EnvelopeDAHDSR dahdsr;
+
     boolean play = true;
     boolean record = false;
 
@@ -38,6 +37,12 @@ public class PlayTone {
         synth.start();
         synth.add(oscillator1);
         synth.add(oscillator2);
+        synth.add(dahdsr = new EnvelopeDAHDSR());
+
+        dahdsr.output.connect(oscillator1.amplitude);
+        dahdsr.output.connect(oscillator2.amplitude);
+        dahdsr.attack.set(0.05);
+        dahdsr.release.set(0.05);
 
         if (play) {
             // Add a stereo audio output unit.
@@ -55,7 +60,7 @@ public class PlayTone {
         }
 
         // Set the frequency and amplitude for the sine wave.
-        set(0.0, 100.0);
+        set(100.0);
 
         // We only need to start the LineOut. It will pull data from the
         // oscillator.
@@ -84,22 +89,21 @@ public class PlayTone {
     }
 
     private double play(double time, double freq) throws InterruptedException {
-        set(0.8, freq);
-        synth.sleepUntil(time + DURATION / 2.0);
-        set(0.0, freq);
+        set(freq);
+        dahdsr.input.set(0.5);
+        synth.sleepUntil(time + DURATION/2);
+        dahdsr.input.set(0.0);
         synth.sleepUntil(time + DURATION);
         return DURATION;
     }
 
-    private void set(double vol, double freq) {
-        oscillator1.amplitude.set(vol);
+    private void set(double freq) {
         oscillator1.frequency.set(freq);
-        oscillator2.amplitude.set(vol);
         oscillator2.frequency.set(freq * 1.5);
-        System.out.printf("vol %1f freq %4f %s\n", vol, freq, Instant.now().toString());
+        System.out.printf("freq %4f %s\n", freq, Instant.now().toString());
     }
 
     public static void main(String[] args) throws IOException {
-        new PlayTone().test();
+        new PlayToneWithEnv().test();
     }
 }
