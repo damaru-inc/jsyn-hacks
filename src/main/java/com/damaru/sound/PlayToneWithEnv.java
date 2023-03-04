@@ -11,9 +11,18 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
 
+/**
+ * This plays and/or records a sequence of sine tones. The right channel is a fifth above the left.
+ */
 public class PlayToneWithEnv {
 
-    private static final double DURATION = 4.0;
+    private static final int[] freqs = {75, 150, 300, 600, 1200, 2400, 4800, 9600};
+
+    private static final double DURATION = 1.0;
+    private static final double ATTACK = 0.01;
+    private static final double DUTY = 0.5;
+    private static final double RELEASE = ATTACK;
+
     private SineOscillator oscillator1 = new SineOscillator();
     private SineOscillator oscillator2 = new SineOscillator();
     Synthesizer synth = JSyn.createSynthesizer();
@@ -41,15 +50,12 @@ public class PlayToneWithEnv {
 
         dahdsr.output.connect(oscillator1.amplitude);
         dahdsr.output.connect(oscillator2.amplitude);
-        dahdsr.attack.set(0.05);
-        dahdsr.release.set(0.05);
+        dahdsr.attack.set(ATTACK);
+        dahdsr.release.set(RELEASE);
 
         if (play) {
-            // Add a stereo audio output unit.
             lineOut = new LineOut();
             synth.add(lineOut);
-
-            // Connect the oscillator to both channels of the output.
             oscillator1.output.connect(0, lineOut.input, 0);
             oscillator2.output.connect(0, lineOut.input, 1);
         }
@@ -59,26 +65,18 @@ public class PlayToneWithEnv {
             oscillator2.output.connect(0, recorder.getInput(), 1);
         }
 
-        // Set the frequency and amplitude for the sine wave.
-        set(100.0);
-
-        // We only need to start the LineOut. It will pull data from the
-        // oscillator.
-
         if (play) lineOut.start();
         if (record) recorder.start();
 
-        // Sleep while the sound is generated in the background.
         try {
             double time = synth.getCurrentTime();
-            time += play(time, 100.0);
-            time += play(time, 200.0);
-            time += play(time, 300.0);
+            for (int i = 0; i < freqs.length; i++) {
+                play(time, freqs[i]);
+                time += DURATION;
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
-        // Stop everything.
 
         if (record) {
             recorder.stop();
@@ -88,19 +86,17 @@ public class PlayToneWithEnv {
         synth.stop();
     }
 
-    private double play(double time, double freq) throws InterruptedException {
+    private void play(double time, int freq) throws InterruptedException {
         set(freq);
         dahdsr.input.set(0.5);
-        synth.sleepUntil(time + DURATION/2);
+        synth.sleepUntil(time + DURATION * DUTY);
         dahdsr.input.set(0.0);
         synth.sleepUntil(time + DURATION);
-        return DURATION;
     }
 
-    private void set(double freq) {
+    private void set(int freq) {
         oscillator1.frequency.set(freq);
         oscillator2.frequency.set(freq * 1.5);
-        System.out.printf("freq %4f %s\n", freq, Instant.now().toString());
     }
 
     public static void main(String[] args) throws IOException {
