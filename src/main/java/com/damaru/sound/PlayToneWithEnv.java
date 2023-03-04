@@ -11,7 +11,7 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * This plays and/or records a sequence of sine tones. The right channel is a fifth above the left.
+ * This plays and/or records a sequence of sine tones.
  */
 public class PlayToneWithEnv {
 
