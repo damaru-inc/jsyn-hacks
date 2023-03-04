@@ -2,21 +2,27 @@ package com.damaru.sound;
 
 import com.jsyn.JSyn;
 import com.jsyn.Synthesizer;
-import com.jsyn.ports.UnitInputPort;
-import com.jsyn.ports.UnitVariablePort;
-import com.jsyn.unitgen.*;
+import com.jsyn.unitgen.EnvelopeDAHDSR;
+import com.jsyn.unitgen.LineOut;
+import com.jsyn.unitgen.SineOscillator;
 import com.jsyn.util.WaveRecorder;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Instant;
 
 /**
  * This plays and/or records a sequence of sine tones. The right channel is a fifth above the left.
  */
 public class PlayToneWithEnv {
 
-    private static final int[] freqs = {75, 150, 300, 600, 1200, 2400, 4800, 9600};
+    //private static final int[] freqs = {75, 150, 300, 600, 1200, 2400, 4800, 9600};
+
+    private static final int[] freqs = {
+            100, 150, 200, 300,
+            400, 600, 800, 1200,
+            1600, 2400, 3200, 4800,
+            6400, 9600, 12800, 19200};
+
 
     private static final double DURATION = 1.0;
     private static final double ATTACK = 0.01;
@@ -31,8 +37,8 @@ public class PlayToneWithEnv {
     private WaveRecorder recorder;
     private EnvelopeDAHDSR dahdsr;
 
-    boolean play = true;
-    boolean record = false;
+    boolean play = false;
+    boolean record = true;
 
     private void test() throws IOException {
 
@@ -96,7 +102,7 @@ public class PlayToneWithEnv {
 
     private void set(int freq) {
         oscillator1.frequency.set(freq);
-        oscillator2.frequency.set(freq * 1.5);
+        oscillator2.frequency.set(freq);
     }
 
     public static void main(String[] args) throws IOException {
